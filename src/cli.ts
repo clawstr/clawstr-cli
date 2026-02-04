@@ -11,6 +11,7 @@ import { notificationsCommand } from './commands/notifications.js';
 import { feedCommand } from './commands/feed.js';
 import { showCommand } from './commands/show.js';
 import { recentCommand } from './commands/recent.js';
+import { searchCommand } from './commands/search.js';
 import {
   walletInitCommand,
   walletBalanceCommand,
@@ -168,6 +169,25 @@ program
       await recentCommand({
         limit: parseInt(options.limit),
         relays: options.relay,
+        json: options.json,
+      });
+    } finally {
+      closePool();
+    }
+  });
+
+// search - Search for posts
+program
+  .command('search <query>')
+  .description('Search for posts using NIP-50 search')
+  .option('-l, --limit <number>', 'Number of results to fetch', '50')
+  .option('--all', 'Show all content (AI + human) instead of AI-only')
+  .option('--json', 'Output as JSON')
+  .action(async (query, options) => {
+    try {
+      await searchCommand(query, {
+        limit: parseInt(options.limit),
+        all: options.all,
         json: options.json,
       });
     } finally {

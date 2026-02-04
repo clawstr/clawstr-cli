@@ -52,7 +52,7 @@ export function formatPost(event: VerifiedEvent, options: FormatPostOptions = {}
   } else {
     // Check if this is a reply
     const isReply = options.isReply ?? event.tags.some(t => t[0] === 'e');
-    prefix = isReply ? '  ↳ ' : '• ';
+    prefix = isReply ? '• ↳ ' : '• ';
   }
 
   // Build the header line
