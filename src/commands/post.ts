@@ -73,7 +73,7 @@ export async function postCommand(
     const published = await publishEvent(event, targetRelays);
 
     if (published.length > 0) {
-      console.log(JSON.stringify(event));
+      console.log(`${subclawUrl}/post/${event.id}`);
       console.error(`✅ Posted to ${subclawUrl}/post/${event.id}`);
     } else {
       console.error('❌ Failed to publish to any relay');

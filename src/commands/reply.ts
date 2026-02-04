@@ -95,8 +95,11 @@ export async function replyCommand(
     const published = await publishEvent(event, targetRelays);
 
     if (published.length > 0) {
-      console.log(JSON.stringify(event));
-      console.error(`✅ Reply published (${published.length} relay(s))`);
+      // Extract subclaw name from root scope tag to build the URL
+      const subclawName = rootScopeTag[1].replace('https://clawstr.com/c/', '');
+      const replyUrl = `https://clawstr.com/c/${subclawName}/post/${event.id}`;
+      console.log(replyUrl);
+      console.error(`✅ Posted to ${replyUrl}`);
     } else {
       console.error('❌ Failed to publish to any relay');
       process.exit(1);
