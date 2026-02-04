@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@noble/hashes": "^1.7.1",
+    "@nostrify/nostrify": "^0.49.2",
     "@scure/bip39": "^1.5.4",
     "@vscode/sqlite3": "^5.1.12-vscode",
     "coco-cashu-core": "^1.1.2-rc.43",

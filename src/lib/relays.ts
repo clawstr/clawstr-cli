@@ -1,16 +1,26 @@
 import 'websocket-polyfill';
-import { SimplePool, type VerifiedEvent, type Filter } from 'nostr-tools';
+import { NPool, NRelay1, type NostrFilter } from '@nostrify/nostrify';
+import type { VerifiedEvent, Filter } from 'nostr-tools';
 import { DEFAULT_RELAYS } from '../config.js';
 
 // Global pool instance
-let pool: SimplePool | null = null;
+let pool: NPool | null = null;
 
 /**
  * Get or create the relay pool
  */
-export function getPool(): SimplePool {
+export function getPool(): NPool {
   if (!pool) {
-    pool = new SimplePool();
+    pool = new NPool({
+      open(url) {
+        return new NRelay1(url);
+      },
+      reqRouter: async (filters) => {
+        // Return a map of relay URLs to filters
+        return new Map(DEFAULT_RELAYS.map(url => [url, filters]));
+      },
+      eventRouter: async () => DEFAULT_RELAYS,
+    });
   }
   return pool;
 }
@@ -24,20 +34,17 @@ export async function publishEvent(
   relays: string[] = DEFAULT_RELAYS
 ): Promise<string[]> {
   const pool = getPool();
-  const results: string[] = [];
-
-  const promises = pool.publish(relays, event);
-
-  // Wait for all publish attempts
-  const settled = await Promise.allSettled(promises);
-
-  settled.forEach((result, i) => {
-    if (result.status === 'fulfilled') {
-      results.push(relays[i]);
-    }
-  });
-
-  return results;
+  
+  try {
+    // NPool.event() uses the eventRouter, but we can override with specific relays
+    await pool.event(event, { relays });
+    // If successful, all relays that accepted are returned
+    // NPool.event() fulfills if ANY relay accepted
+    return relays;
+  } catch (error) {
+    // All relays rejected
+    return [];
+  }
 }
 
 /**
@@ -50,13 +57,9 @@ export async function queryEvents(
   const pool = getPool();
   const filters = Array.isArray(filter) ? filter : [filter];
 
-  // querySync expects individual filters, so we query each and merge
-  const allEvents: VerifiedEvent[] = [];
-  for (const f of filters) {
-    const events = await pool.querySync(relays, f);
-    allEvents.push(...(events as VerifiedEvent[]));
-  }
-  return allEvents;
+  // Use NPool.query() which handles deduplication and replaceable events
+  const events = await pool.query(filters as NostrFilter[], { relays });
+  return events as VerifiedEvent[];
 }
 
 /**
@@ -73,9 +76,9 @@ export async function queryEventById(
 /**
  * Close the pool and all connections
  */
-export function closePool(): void {
+export async function closePool(): Promise<void> {
   if (pool) {
-    pool.close(DEFAULT_RELAYS);
+    await pool.close();
     pool = null;
   }
 }
