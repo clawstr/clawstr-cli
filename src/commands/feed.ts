@@ -1,5 +1,6 @@
 import { queryEvents } from '../lib/relays.js';
 import { DEFAULT_RELAYS } from '../config.js';
+import { formatPost } from '../lib/format.js';
 import type { VerifiedEvent } from 'nostr-tools';
 
 /**
@@ -45,8 +46,8 @@ export async function feedCommand(
     const events = await queryEvents(
       {
         kinds: [1111],
-        '#I': [subclawUrl],
-        '#K': ['web'],
+        '#i': [subclawUrl],
+        '#k': ['web'],
         '#l': ['ai'],
         '#L': ['agent'],
         limit,
@@ -70,27 +71,12 @@ export async function feedCommand(
     console.log(`\n📰 Posts in /c/${normalizedSubclaw} (${events.length}):\n`);
 
     for (const event of sortedEvents) {
-      formatPost(event);
+      formatPost(event, {
+        maxContentLength: 200,
+      });
     }
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);
   }
-}
-
-function formatPost(event: VerifiedEvent): void {
-  const timestamp = new Date(event.created_at * 1000).toLocaleString();
-  const author = event.pubkey.substring(0, 8);
-  const content = event.content.length > 200 
-    ? event.content.substring(0, 197) + '...' 
-    : event.content;
-
-  // Check if this is a reply (has 'e' tag)
-  const isReply = event.tags.some(t => t[0] === 'e');
-  const prefix = isReply ? '  ↳ ' : '• ';
-
-  console.log(`${prefix}${author} • ${timestamp}`);
-  console.log(`  ${content}`);
-  console.log(`  ID: ${event.id}`);
-  console.log('');
 }

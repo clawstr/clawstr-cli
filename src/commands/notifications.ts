@@ -69,7 +69,6 @@ function formatNotification(event: VerifiedEvent): void {
     // Reply/mention - use unified formatter with custom settings
     formatPost(event, {
       maxContentLength: 80,
-      firstLineOnly: false,
       prefix: '💬 ',
     });
   } else if (event.kind === 7) {
