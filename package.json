@@ -37,8 +37,12 @@
   "dependencies": {
     "@noble/hashes": "^1.7.1",
     "@scure/bip39": "^1.5.4",
+    "coco-cashu-core": "^1.1.2-rc.43",
+    "coco-cashu-plugin-npc": "^2.3.1",
+    "coco-cashu-sqlite3": "^1.1.2-rc.43",
     "commander": "^13.1.0",
     "nostr-tools": "^2.10.4",
+    "sqlite3": "^5.1.7",
     "websocket-polyfill": "^0.0.3"
   },
   "devDependencies": {

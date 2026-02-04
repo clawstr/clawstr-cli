@@ -8,6 +8,17 @@ import { replyCommand } from './commands/reply.js';
 import { reactCommand } from './commands/react.js';
 import { encodeCommand } from './commands/encode.js';
 import { decodeCommand } from './commands/decode.js';
+import {
+  walletInitCommand,
+  walletBalanceCommand,
+  walletReceiveCashuCommand,
+  walletSendCashuCommand,
+  walletReceiveBolt11Command,
+  walletSendBolt11Command,
+  walletNpcAddressCommand,
+  walletMnemonicCommand,
+  walletHistoryCommand,
+} from './commands/wallet.js';
 import { closePool } from './lib/relays.js';
 
 const program = new Command();
@@ -130,6 +141,92 @@ program
   .option('--json', 'Output as JSON')
   .action(async (value, options) => {
     await decodeCommand(value, options);
+  });
+
+// wallet - Cashu wallet subcommands
+const wallet = program
+  .command('wallet')
+  .description('Cashu wallet operations');
+
+wallet
+  .command('init')
+  .description('Initialize a new Cashu wallet')
+  .option('-m, --mnemonic <phrase>', 'Use existing BIP39 mnemonic')
+  .option('--mint <url>', 'Default mint URL')
+  .action(async (options) => {
+    await walletInitCommand(options);
+  });
+
+wallet
+  .command('balance')
+  .description('Display wallet balance')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    await walletBalanceCommand(options);
+  });
+
+// wallet receive subcommands
+const walletReceive = wallet
+  .command('receive')
+  .description('Receive funds');
+
+walletReceive
+  .command('cashu <token>')
+  .description('Receive a Cashu token')
+  .action(async (token) => {
+    await walletReceiveCashuCommand(token);
+  });
+
+walletReceive
+  .command('bolt11 <amount>')
+  .description('Create Lightning invoice to receive')
+  .option('--mint <url>', 'Mint URL')
+  .action(async (amount, options) => {
+    await walletReceiveBolt11Command(parseInt(amount), options);
+  });
+
+// wallet send subcommands
+const walletSend = wallet
+  .command('send')
+  .description('Send funds');
+
+walletSend
+  .command('cashu <amount>')
+  .description('Create a Cashu token to send')
+  .option('--mint <url>', 'Mint URL')
+  .action(async (amount, options) => {
+    await walletSendCashuCommand(parseInt(amount), options);
+  });
+
+walletSend
+  .command('bolt11 <invoice>')
+  .description('Pay a Lightning invoice')
+  .option('--mint <url>', 'Mint URL')
+  .action(async (invoice, options) => {
+    await walletSendBolt11Command(invoice, options);
+  });
+
+wallet
+  .command('npc')
+  .description('Display your Lightning address (NPC)')
+  .action(async () => {
+    await walletNpcAddressCommand();
+  });
+
+wallet
+  .command('mnemonic')
+  .description('Display wallet mnemonic (backup phrase)')
+  .action(async () => {
+    await walletMnemonicCommand();
+  });
+
+wallet
+  .command('history')
+  .description('Display transaction history')
+  .option('-l, --limit <number>', 'Number of entries to show', '20')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    await walletHistoryCommand({ limit: parseInt(options.limit), json: options.json });
   });
 
 export { program };
