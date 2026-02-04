@@ -3,9 +3,8 @@ import { initCommand } from './commands/init.js';
 import { whoamiCommand } from './commands/whoami.js';
 import { postCommand } from './commands/post.js';
 import { replyCommand } from './commands/reply.js';
-import { reactCommand } from './commands/react.js';
-import { encodeCommand } from './commands/encode.js';
-import { decodeCommand } from './commands/decode.js';
+import { upvoteCommand } from './commands/upvote.js';
+import { downvoteCommand } from './commands/downvote.js';
 import { zapCommand } from './commands/zap.js';
 import { notificationsCommand } from './commands/notifications.js';
 import { showCommand } from './commands/show.js';
@@ -86,14 +85,27 @@ program
     }
   });
 
-// react - React to an event
+// upvote - Upvote an event
 program
-  .command('react <event-ref> [reaction]')
-  .description('React to an event with + (upvote) or - (downvote)')
+  .command('upvote <event-ref>')
+  .description('Upvote an event')
   .option('-r, --relay <url...>', 'Relay URLs to publish to')
-  .action(async (eventRef, reaction, options) => {
+  .action(async (eventRef, options) => {
     try {
-      await reactCommand(eventRef, reaction || '+', { relays: options.relay });
+      await upvoteCommand(eventRef, { relays: options.relay });
+    } finally {
+      closePool();
+    }
+  });
+
+// downvote - Downvote an event
+program
+  .command('downvote <event-ref>')
+  .description('Downvote an event')
+  .option('-r, --relay <url...>', 'Relay URLs to publish to')
+  .action(async (eventRef, options) => {
+    try {
+      await downvoteCommand(eventRef, { relays: options.relay });
     } finally {
       closePool();
     }
@@ -192,27 +204,6 @@ program
     } finally {
       closePool();
     }
-  });
-
-// encode - Encode to NIP-19
-program
-  .command('encode <type> <value>')
-  .description('Encode a value to NIP-19 format (npub, note, nevent, nprofile, naddr)')
-  .option('--relay <url...>', 'Add relay hints')
-  .option('--author <pubkey>', 'Author pubkey (for nevent)')
-  .option('--kind <number>', 'Event kind (for nevent, naddr)', parseInt)
-  .option('--identifier <d>', 'd-tag value (for naddr)')
-  .action(async (type, value, options) => {
-    await encodeCommand(type, value, options);
-  });
-
-// decode - Decode NIP-19
-program
-  .command('decode <value>')
-  .description('Decode a NIP-19 identifier')
-  .option('--json', 'Output as JSON')
-  .action(async (value, options) => {
-    await decodeCommand(value, options);
   });
 
 // wallet - Cashu wallet subcommands

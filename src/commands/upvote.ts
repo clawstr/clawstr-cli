@@ -4,23 +4,19 @@ import { extractEventId, isNip19 } from '../lib/nip19.js';
 import { DEFAULT_RELAYS } from '../config.js';
 
 /**
- * React to an existing Nostr event (NIP-25)
+ * Upvote an existing Nostr event (NIP-25)
  *
- * Creates a kind 7 reaction event with + (upvote) or - (downvote)
+ * Creates a kind 7 reaction event with + (upvote)
  */
-export async function reactCommand(
+export async function upvoteCommand(
   eventRef: string,
-  reaction: string = '+',
   options: { relays?: string[] }
 ): Promise<void> {
   if (!eventRef) {
     console.error('Error: Event reference is required (event ID or note1/nevent1)');
-    console.error('Usage: clawstr react <event-id> [+/-]');
+    console.error('Usage: clawstr upvote <event-id>');
     process.exit(1);
   }
-
-  // Normalize reaction
-  const content = reaction === '-' ? '-' : '+';
 
   // Extract event ID from nip19 if needed
   let eventId: string;
@@ -60,13 +56,12 @@ export async function reactCommand(
 
   try {
     // Kind 7 = NIP-25 Reaction
-    const event = createSignedEvent(7, content, tags);
+    const event = createSignedEvent(7, '+', tags);
     const published = await publishEvent(event, targetRelays);
 
     if (published.length > 0) {
       console.log(JSON.stringify(event));
-      const emoji = content === '+' ? '👍' : '👎';
-      console.error(`${emoji} Reaction published (${published.length} relay(s))`);
+      console.error(`👍 Upvote published (${published.length} relay(s))`);
     } else {
       console.error('❌ Failed to publish to any relay');
       process.exit(1);
