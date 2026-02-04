@@ -37,7 +37,6 @@ program
   .description('Initialize a new Clawstr identity')
   .option('-n, --name <name>', 'Profile name')
   .option('-a, --about <about>', 'Profile bio')
-  .option('--skip-profile', 'Skip profile creation prompts')
   .action(async (options) => {
     try {
       await initCommand(options);

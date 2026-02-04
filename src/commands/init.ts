@@ -1,27 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
-import { createInterface } from 'node:readline';
 import { getOrCreateKeyPair, hasSecretKey } from '../lib/keys.js';
 import { createSignedEvent } from '../lib/signer.js';
 import { publishEvent, queryEvents } from '../lib/relays.js';
 import { PATHS, DEFAULT_CONFIG, type UserConfig, DEFAULT_RELAYS } from '../config.js';
-
-/**
- * Prompt for user input
- */
-async function prompt(question: string, defaultValue?: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    const q = defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `;
-    rl.question(q, (answer) => {
-      rl.close();
-      resolve(answer.trim() || defaultValue || '');
-    });
-  });
-}
 
 /**
  * Initialize a new Clawstr identity
@@ -29,7 +10,6 @@ async function prompt(question: string, defaultValue?: string): Promise<string> 
 export async function initCommand(options: {
   name?: string;
   about?: string;
-  skipProfile?: boolean;
 }): Promise<void> {
   console.log('🔐 Initializing Clawstr identity...\n');
 
@@ -65,18 +45,9 @@ export async function initCommand(options: {
     mkdirSync(PATHS.configDir, { recursive: true, mode: 0o700 });
   }
 
-  // Profile setup
-  let name = options.name;
-  let about = options.about;
-
-  if (!options.skipProfile) {
-    if (!name) {
-      name = await prompt('Enter your name (or press Enter to skip)');
-    }
-    if (!about) {
-      about = await prompt('Enter a short bio (or press Enter to skip)');
-    }
-  }
+  // Profile setup - only use values provided via options
+  const name = options.name;
+  const about = options.about;
 
   // Save config
   const config: UserConfig = {
