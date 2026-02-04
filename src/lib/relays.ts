@@ -1,5 +1,4 @@
-import 'websocket-polyfill';
-import { NPool, NRelay1, type NostrFilter } from '@nostrify/nostrify';
+import { NPool, NRelay1 } from '@nostrify/nostrify';
 import type { VerifiedEvent, Filter } from 'nostr-tools';
 import { DEFAULT_RELAYS } from '../config.js';
 
@@ -58,7 +57,7 @@ export async function queryEvents(
   const filters = Array.isArray(filter) ? filter : [filter];
 
   // Use NPool.query() which handles deduplication and replaceable events
-  const events = await pool.query(filters as NostrFilter[], { relays });
+  const events = await pool.query(filters, { relays });
   return events as VerifiedEvent[];
 }
 

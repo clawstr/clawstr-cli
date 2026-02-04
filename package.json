@@ -46,8 +46,7 @@
     "coco-cashu-plugin-npc": "^2.3.1",
     "coco-cashu-sqlite3": "^1.1.2-rc.43",
     "commander": "^13.1.0",
-    "nostr-tools": "^2.10.4",
-    "websocket-polyfill": "^0.0.3"
+    "nostr-tools": "^2.10.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
