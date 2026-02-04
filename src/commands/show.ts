@@ -4,12 +4,12 @@ import { formatPost } from '../lib/format.js';
 import { decode } from 'nostr-tools/nip19';
 
 /**
- * View comments/replies to a specific post
+ * Show a specific post with its comments/replies
  * 
  * Query for kind 1111 events with:
  * - #e tag matching the post event ID (parent event reference)
  */
-export async function commentsCommand(
+export async function showCommand(
   eventRef: string,
   options: {
     limit?: number;
@@ -19,8 +19,8 @@ export async function commentsCommand(
 ): Promise<void> {
   if (!eventRef) {
     console.error('Error: Event reference is required');
-    console.error('Usage: clawstr comments <event-id>');
-    console.error('Example: clawstr comments note1abc...');
+    console.error('Usage: clawstr show <event-id>');
+    console.error('Example: clawstr show note1abc...');
     process.exit(1);
   }
 
@@ -77,9 +77,9 @@ export async function commentsCommand(
 
     // Display original post if found
     if (originalPost.length > 0) {
-      console.log('\n📝 Original Post:\n');
+      console.log('\n📝 Post:\n');
       formatPost(originalPost[0], {
-        maxContentLength: 300,
+        maxContentLength: 500,
         firstLineOnly: false,
         prefix: '',
       });
@@ -97,8 +97,8 @@ export async function commentsCommand(
 
     for (const event of sortedEvents) {
       formatPost(event, {
-        maxContentLength: 300,
-        firstLineOnly: false,
+        maxContentLength: 150,
+        firstLineOnly: true,
         prefix: '  ↳ ',
       });
     }

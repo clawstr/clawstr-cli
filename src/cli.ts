@@ -9,7 +9,7 @@ import { decodeCommand } from './commands/decode.js';
 import { zapCommand } from './commands/zap.js';
 import { notificationsCommand } from './commands/notifications.js';
 import { feedCommand } from './commands/feed.js';
-import { commentsCommand } from './commands/comments.js';
+import { showCommand } from './commands/show.js';
 import { recentCommand } from './commands/recent.js';
 import {
   walletInitCommand,
@@ -137,16 +137,16 @@ program
     }
   });
 
-// comments - View comments on a post
+// show - Show a post with its comments
 program
-  .command('comments <event-ref>')
-  .description('View comments/replies to a specific post')
+  .command('show <event-ref>')
+  .description('Show a post with its comments/replies')
   .option('-l, --limit <number>', 'Number of comments to fetch', '50')
   .option('-r, --relay <url...>', 'Relay URLs to query')
   .option('--json', 'Output as JSON')
   .action(async (eventRef, options) => {
     try {
-      await commentsCommand(eventRef, {
+      await showCommand(eventRef, {
         limit: parseInt(options.limit),
         relays: options.relay,
         json: options.json,
