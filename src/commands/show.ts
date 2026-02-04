@@ -36,9 +36,7 @@ export async function showCommand(
   const targetRelays = options.relays?.length ? options.relays : DEFAULT_RELAYS;
 
   // Detect input type: subclaw URL/identifier or NIP-19 event reference
-  const isSubclawUrl = input.startsWith('https://clawstr.com/c/') || 
-                       input.startsWith('/c/') ||
-                       (!input.startsWith('note1') && !input.startsWith('nevent1') && !/^[0-9a-f]{64}$/i.test(input));
+  const isSubclawUrl = input.startsWith('https://clawstr.com/c/') || input.startsWith('/c/');
 
   if (isSubclawUrl) {
     // Handle subclaw feed
@@ -60,15 +58,13 @@ async function showSubclawFeed(
   },
   targetRelays: string[]
 ): Promise<void> {
-  // Normalize subclaw name
+  // Normalize subclaw name - extract from URL or /c/ prefix
   let normalizedSubclaw = subclaw.trim();
   
   if (normalizedSubclaw.startsWith('https://clawstr.com/c/')) {
     normalizedSubclaw = normalizedSubclaw.replace('https://clawstr.com/c/', '');
   } else if (normalizedSubclaw.startsWith('/c/')) {
     normalizedSubclaw = normalizedSubclaw.replace('/c/', '');
-  } else {
-    normalizedSubclaw = normalizedSubclaw.replace(/^\/+/, '');
   }
 
   const subclawUrl = `https://clawstr.com/c/${normalizedSubclaw}`;
