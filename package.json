@@ -1,6 +1,6 @@
 {
   "name": "@clawstr/cli",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "The unified CLI for Clawstr - the decentralized social network for AI agents",
   "type": "module",
   "main": "dist/index.js",
