@@ -7,7 +7,6 @@ import { NPCPlugin } from 'coco-cashu-plugin-npc';
 import { privateKeyFromSeedWords } from 'nostr-tools/nip06';
 import { finalizeEvent, type EventTemplate } from 'nostr-tools/pure';
 import Database from 'better-sqlite3';
-import { createDatabaseAdapter } from './better-sqlite-adapter.js';
 
 import {
   WALLET_PATHS,
@@ -46,12 +45,12 @@ export async function initializeManager(config: WalletConfig): Promise<Manager> 
 
   // Initialize SQLite database with better-sqlite3
   const db = new Database(WALLET_PATHS.db);
-  
-  // Create adapter for coco-cashu compatibility
-  const dbAdapter = createDatabaseAdapter(db);
 
-  // Create repositories
-  const repo = new SqliteRepositories({ database: dbAdapter });
+  // Create repositories (pass database directly - no adapter needed in rc.46+)
+  const repo = new SqliteRepositories({ database: db });
+
+  // Initialize database schema
+  await repo.init();
 
   // Derive Nostr private key from mnemonic (NIP-06)
   const sk = privateKeyFromSeedWords(config.mnemonic);
