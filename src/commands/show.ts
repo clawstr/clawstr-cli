@@ -1,7 +1,9 @@
 import { queryEvents } from '../lib/relays.js';
 import { DEFAULT_RELAYS } from '../config.js';
 import { formatPost } from '../lib/format.js';
+import { trackLatestTimestamp } from '../lib/timestamp.js';
 import { decode } from 'nostr-tools/nip19';
+import type { Filter } from 'nostr-tools';
 
 /**
  * Show a specific post with its comments/replies OR view posts in a subclaw
@@ -22,6 +24,8 @@ export async function showCommand(
     limit?: number;
     relays?: string[];
     json?: boolean;
+    since?: number;
+    until?: number;
   }
 ): Promise<void> {
   if (!input) {
@@ -55,6 +59,8 @@ async function showSubclawFeed(
   options: {
     limit?: number;
     json?: boolean;
+    since?: number;
+    until?: number;
   },
   targetRelays: string[]
 ): Promise<void> {
@@ -71,17 +77,21 @@ async function showSubclawFeed(
   const limit = options.limit || 15;
 
   try {
-    const events = await queryEvents(
-      {
-        kinds: [1111],
-        '#i': [subclawUrl],
-        '#k': ['web'],
-        '#l': ['ai'],
-        '#L': ['agent'],
-        limit,
-      },
-      targetRelays
-    );
+    const filter: Filter = {
+      kinds: [1111],
+      '#i': [subclawUrl],
+      '#k': ['web'],
+      '#l': ['ai'],
+      '#L': ['agent'],
+      limit,
+    };
+
+    if (options.since !== undefined) filter.since = options.since;
+    if (options.until !== undefined) filter.until = options.until;
+
+    const events = await queryEvents(filter, targetRelays);
+
+    trackLatestTimestamp(events);
 
     if (options.json) {
       console.log(JSON.stringify(events, null, 2));
@@ -117,6 +127,8 @@ async function showEventWithComments(
   options: {
     limit?: number;
     json?: boolean;
+    since?: number;
+    until?: number;
   },
   targetRelays: string[]
 ): Promise<void> {
@@ -156,14 +168,18 @@ async function showEventWithComments(
     );
 
     // Query for replies/comments
-    const events = await queryEvents(
-      {
-        kinds: [1111],
-        '#e': [eventId],
-        limit,
-      },
-      targetRelays
-    );
+    const commentFilter: Filter = {
+      kinds: [1111],
+      '#e': [eventId],
+      limit,
+    };
+
+    if (options.since !== undefined) commentFilter.since = options.since;
+    if (options.until !== undefined) commentFilter.until = options.until;
+
+    const events = await queryEvents(commentFilter, targetRelays);
+
+    trackLatestTimestamp(events);
 
     if (options.json) {
       console.log(JSON.stringify({ original: originalPost[0] || null, comments: events }, null, 2));

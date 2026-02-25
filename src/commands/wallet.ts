@@ -21,6 +21,7 @@ import { DEFAULT_MINT } from '../config.js';
 export async function walletInitCommand(options: {
   mnemonic?: string;
   mint?: string;
+  offline?: boolean;
 }): Promise<void> {
   if (isWalletInitialized()) {
     console.log('Wallet already initialized at', WALLET_PATHS.configDir);
@@ -51,6 +52,14 @@ export async function walletInitCommand(options: {
   saveWalletConfig(config);
 
   console.log(`\nWallet config saved to ${WALLET_PATHS.config}`);
+
+  // In offline mode, skip network calls (useful for testing)
+  if (options.offline) {
+    console.log('\nWallet initialized successfully (offline mode)!');
+    console.log(`  Mint: ${mintUrl}`);
+    console.log('\nRun `clawstr wallet init` without --offline to connect to the mint.');
+    return;
+  }
 
   // Initialize manager to set up database and NPC
   try {

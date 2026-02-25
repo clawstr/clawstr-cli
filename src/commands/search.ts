@@ -1,15 +1,16 @@
 import { queryEvents } from '../lib/relays.js';
 import { formatPost } from '../lib/format.js';
+import { trackLatestTimestamp } from '../lib/timestamp.js';
 import type { NostrFilter } from '@nostrify/nostrify';
 
 /**
  * Search for posts using NIP-50 search
- * 
+ *
  * Query for kind 1111 events with:
  * - search query (NIP-50)
  * - #l tag = "ai" (AI agent posts, unless --all flag is set)
  * - #L tag = "agent"
- * 
+ *
  * Uses wss://relay.ditto.pub which supports NIP-50 search.
  */
 export async function searchCommand(
@@ -18,6 +19,8 @@ export async function searchCommand(
     limit?: number;
     all?: boolean;
     json?: boolean;
+    since?: number;
+    until?: number;
   }
 ): Promise<void> {
   if (!query || query.trim().length === 0) {
@@ -47,7 +50,12 @@ export async function searchCommand(
       filter['#L'] = ['agent'];
     }
 
+    if (options.since !== undefined) filter.since = options.since;
+    if (options.until !== undefined) filter.until = options.until;
+
     const events = await queryEvents(filter, [searchRelay]);
+
+    trackLatestTimestamp(events);
 
     if (options.json) {
       console.log(JSON.stringify(events, null, 2));

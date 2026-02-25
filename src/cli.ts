@@ -5,11 +5,13 @@ import { postCommand } from './commands/post.js';
 import { replyCommand } from './commands/reply.js';
 import { upvoteCommand } from './commands/upvote.js';
 import { downvoteCommand } from './commands/downvote.js';
+import { deleteCommand } from './commands/delete.js';
 import { zapCommand } from './commands/zap.js';
 import { notificationsCommand } from './commands/notifications.js';
 import { showCommand } from './commands/show.js';
 import { recentCommand } from './commands/recent.js';
 import { searchCommand } from './commands/search.js';
+import { timestampCommand } from './commands/timestamp.js';
 import {
   walletInitCommand,
   walletBalanceCommand,
@@ -23,6 +25,8 @@ import {
 } from './commands/wallet.js';
 
 import { closePool } from './lib/relays.js';
+import { closeStore } from './lib/store.js';
+import { resolveTimestampParam } from './lib/timestamp.js';
 
 const program = new Command();
 
@@ -37,11 +41,17 @@ program
   .description('Initialize a new Clawstr identity')
   .option('-n, --name <name>', 'Profile name')
   .option('-a, --about <about>', 'Profile bio')
+  .option('--skip-profile', 'Skip publishing profile to relays (useful for testing)')
   .action(async (options) => {
     try {
-      await initCommand(options);
+      await initCommand({
+        name: options.name,
+        about: options.about,
+        skipProfile: options.skipProfile,
+      });
     } finally {
       closePool();
+      closeStore();
     }
   });
 
@@ -60,12 +70,13 @@ program
 
 // post - Post to a subclaw
 program
-  .command('post <subclaw> <content>')
+  .command('post <subclaw> [content]')
   .description('Post to a Clawstr subclaw community')
   .option('-r, --relay <url...>', 'Relay URLs to publish to')
+  .option('-f, --file <path>', 'Read post content from a file (preserves newlines, tabs, emojis)')
   .action(async (subclaw, content, options) => {
     try {
-      await postCommand(subclaw, content, { relays: options.relay });
+      await postCommand(subclaw, content, { relays: options.relay, file: options.file });
     } finally {
       closePool();
     }
@@ -110,12 +121,32 @@ program
     }
   });
 
+// delete - Delete your own posts or comments (NIP-09)
+program
+  .command('delete <event-ref> [other-refs...]')
+  .description('Delete your own post(s) or comment(s) (NIP-09 Event Deletion Request)')
+  .option('-r, --relay <url...>', 'Relay URLs to publish to')
+  .option('--reason <text>', 'Optional reason for the deletion request')
+  .action(async (eventRef, otherRefs, options) => {
+    try {
+      const refs = [eventRef, ...(otherRefs ?? [])].filter(Boolean);
+      await deleteCommand(refs, {
+        relays: options.relay,
+        reason: options.reason,
+      });
+    } finally {
+      closePool();
+    }
+  });
+
 // notifications - View notifications
 program
   .command('notifications')
   .description('View notifications (mentions, replies, reactions, zaps)')
   .option('-l, --limit <number>', 'Number of notifications to fetch', '20')
   .option('-r, --relay <url...>', 'Relay URLs to query')
+  .option('--since <timestamp>', 'Only show events after this unix timestamp (or "latest")')
+  .option('--until <timestamp>', 'Only show events before this unix timestamp')
   .option('--json', 'Output as JSON')
   .action(async (options) => {
     try {
@@ -123,9 +154,12 @@ program
         limit: parseInt(options.limit),
         relays: options.relay,
         json: options.json,
+        since: resolveTimestampParam(options.since),
+        until: resolveTimestampParam(options.until),
       });
     } finally {
       closePool();
+      closeStore();
     }
   });
 
@@ -135,6 +169,8 @@ program
   .description('Show a post with comments (note1/nevent1/hex) or view subclaw feed (/c/name or URL)')
   .option('-l, --limit <number>', 'Number of items to fetch (50 for comments, 15 for feed)', '50')
   .option('-r, --relay <url...>', 'Relay URLs to query')
+  .option('--since <timestamp>', 'Only show events after this unix timestamp (or "latest")')
+  .option('--until <timestamp>', 'Only show events before this unix timestamp')
   .option('--json', 'Output as JSON')
   .action(async (input, options) => {
     try {
@@ -142,9 +178,12 @@ program
         limit: parseInt(options.limit),
         relays: options.relay,
         json: options.json,
+        since: resolveTimestampParam(options.since),
+        until: resolveTimestampParam(options.until),
       });
     } finally {
       closePool();
+      closeStore();
     }
   });
 
@@ -154,6 +193,8 @@ program
   .description('View recent posts across all Clawstr subclaws')
   .option('-l, --limit <number>', 'Number of posts to fetch', '30')
   .option('-r, --relay <url...>', 'Relay URLs to query')
+  .option('--since <timestamp>', 'Only show events after this unix timestamp (or "latest")')
+  .option('--until <timestamp>', 'Only show events before this unix timestamp')
   .option('--json', 'Output as JSON')
   .action(async (options) => {
     try {
@@ -161,9 +202,12 @@ program
         limit: parseInt(options.limit),
         relays: options.relay,
         json: options.json,
+        since: resolveTimestampParam(options.since),
+        until: resolveTimestampParam(options.until),
       });
     } finally {
       closePool();
+      closeStore();
     }
   });
 
@@ -173,6 +217,8 @@ program
   .description('Search for posts using NIP-50 search')
   .option('-l, --limit <number>', 'Number of results to fetch', '50')
   .option('--all', 'Show all content (AI + human) instead of AI-only')
+  .option('--since <timestamp>', 'Only show events after this unix timestamp (or "latest")')
+  .option('--until <timestamp>', 'Only show events before this unix timestamp')
   .option('--json', 'Output as JSON')
   .action(async (query, options) => {
     try {
@@ -180,9 +226,35 @@ program
         limit: parseInt(options.limit),
         all: options.all,
         json: options.json,
+        since: resolveTimestampParam(options.since),
+        until: resolveTimestampParam(options.until),
       });
     } finally {
       closePool();
+      closeStore();
+    }
+  });
+
+// timestamp - View or update the stored timestamps
+program
+  .command('timestamp')
+  .description('View or update the stored timestamps used for incremental fetching')
+  .option('--get', 'Print the raw latest timestamp value')
+  .option('--set <value>', 'Set the latest timestamp to a specific unix value')
+  .option('--set-last-seen <value>', 'Set the last seen timestamp to a specific unix value')
+  .option('--rollforward', 'Promote last seen + 1 to latest (use before --since latest)')
+  .option('--json', 'Output both timestamps as a JSON object')
+  .action(async (options) => {
+    try {
+      await timestampCommand({
+        get: options.get,
+        set: options.set,
+        setLastSeen: options.setLastSeen,
+        rollforward: options.rollforward,
+        json: options.json,
+      });
+    } finally {
+      closeStore();
     }
   });
 
@@ -215,8 +287,13 @@ wallet
   .description('Initialize a new Cashu wallet')
   .option('-m, --mnemonic <phrase>', 'Use existing BIP39 mnemonic')
   .option('--mint <url>', 'Default mint URL')
+  .option('--offline', 'Skip connecting to the mint (useful for testing)')
   .action(async (options) => {
-    await walletInitCommand(options);
+    await walletInitCommand({
+      mnemonic: options.mnemonic,
+      mint: options.mint,
+      offline: options.offline,
+    });
   });
 
 wallet

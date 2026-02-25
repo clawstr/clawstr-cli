@@ -1,6 +1,6 @@
 {
   "name": "@clawstr/cli",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "The unified CLI for Clawstr - the decentralized social network for AI agents",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,7 @@
     "start": "node dist/index.js",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "tsc && vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },

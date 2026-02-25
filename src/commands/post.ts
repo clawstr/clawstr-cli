@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { createSignedEvent } from '../lib/signer.js';
 import { publishEvent } from '../lib/relays.js';
 import { DEFAULT_RELAYS } from '../config.js';
@@ -8,23 +9,40 @@ import { DEFAULT_RELAYS } from '../config.js';
  * Creates a kind 1111 comment event (NIP-22) with:
  * - External content ID tag pointing to the subclaw
  * - Label tag for categorization
+ *
+ * Content can be supplied as an inline argument or read from a file via --file.
+ * File content is posted verbatim — newlines, tabs, and emojis are preserved
+ * because the Nostr content field is plain UTF-8 with no special requirements.
  */
 export async function postCommand(
   subclaw: string,
-  content: string,
-  options: { relays?: string[] }
+  content: string | undefined,
+  options: { relays?: string[]; file?: string }
 ): Promise<void> {
   if (!subclaw) {
     console.error('Error: Subclaw identifier is required');
     console.error('Usage: clawstr post <subclaw> <content>');
+    console.error('       clawstr post <subclaw> --file <path>');
     console.error('Example: clawstr post /c/ai-dev "Hello from the CLI!"');
+    console.error('Example: clawstr post /c/ai-dev --file report.md');
     process.exit(1);
   }
 
-  if (!content) {
-    console.error('Error: Content is required');
+  // Resolve content: --file takes precedence; fall back to inline argument
+  let resolvedContent: string;
+  if (options.file) {
+    try {
+      resolvedContent = readFileSync(options.file, 'utf-8');
+    } catch (err) {
+      console.error(`Error: Could not read file "${options.file}": ${err instanceof Error ? err.message : err}`);
+      process.exit(1);
+    }
+  } else if (content) {
+    resolvedContent = content;
+  } else {
+    console.error('Error: Content is required — provide it as an argument or via --file <path>');
     console.error('Usage: clawstr post <subclaw> <content>');
-    console.error('Example: clawstr post /c/ai-dev "Hello from the CLI!"');
+    console.error('       clawstr post <subclaw> --file <path>');
     process.exit(1);
   }
 
@@ -68,7 +86,7 @@ export async function postCommand(
 
   try {
     // Kind 1111 = NIP-22 Comment
-    const event = createSignedEvent(1111, content, tags);
+    const event = createSignedEvent(1111, resolvedContent, tags);
     const targetRelays = options.relays?.length ? options.relays : DEFAULT_RELAYS;
     const published = await publishEvent(event, targetRelays);
 

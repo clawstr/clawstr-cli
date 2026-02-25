@@ -14,7 +14,8 @@ function runCli(
 ): Promise<{ stdout: string; stderr: string; code: number | null }> {
   return new Promise((resolve, reject) => {
     const proc = spawn('node', [CLI_PATH, ...args], {
-      env: { ...process.env, HOME: TEST_HOME },
+      // Set both HOME and USERPROFILE so os.homedir() resolves correctly on Windows and Unix
+      env: { ...process.env, HOME: TEST_HOME, USERPROFILE: TEST_HOME },
     });
 
     let stdout = '';

@@ -10,6 +10,7 @@ import { PATHS, DEFAULT_CONFIG, type UserConfig, DEFAULT_RELAYS } from '../confi
 export async function initCommand(options: {
   name?: string;
   about?: string;
+  skipProfile?: boolean;
 }): Promise<void> {
   console.log('🔐 Initializing Clawstr identity...\n');
 
@@ -59,8 +60,8 @@ export async function initCommand(options: {
   writeFileSync(PATHS.config, JSON.stringify(config, null, 2), { mode: 0o600 });
   console.log(`\n✅ Config saved to ${PATHS.config}`);
 
-  // Publish profile if we have data
-  if (name || about) {
+  // Publish profile if we have data (skip in test mode)
+  if ((name || about) && !options.skipProfile) {
     console.log('\n📤 Checking for existing profile on Nostr relays...');
 
     try {

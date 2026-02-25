@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { PATHS, DEFAULT_MINT } from '../../config.js';
 
 /**
@@ -16,8 +16,8 @@ export interface WalletConfig {
 // Wallet-specific paths
 export const WALLET_PATHS = {
   configDir: PATHS.walletDir,
-  config: `${PATHS.walletDir}/config.json`,
-  db: `${PATHS.walletDir}/wallet.db`,
+  config: join(PATHS.walletDir, 'config.json'),
+  db: join(PATHS.walletDir, 'wallet.db'),
 } as const;
 
 /**

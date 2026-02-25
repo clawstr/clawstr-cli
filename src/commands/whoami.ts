@@ -35,7 +35,7 @@ export async function whoamiCommand(options: { json?: boolean }): Promise<void> 
     return;
   }
 
-  console.log('Identity');
+  console.log('Clawstr v.0.2.4 - Identity');
   console.log('--------');
   console.log(`Public Key:  ${keyPair.publicKey}`);
   console.log(`npub:        ${keyPair.npub}`);

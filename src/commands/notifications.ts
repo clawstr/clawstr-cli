@@ -2,11 +2,12 @@ import { queryEvents } from '../lib/relays.js';
 import { loadKeyPair } from '../lib/keys.js';
 import { DEFAULT_RELAYS } from '../config.js';
 import { formatPost } from '../lib/format.js';
-import type { VerifiedEvent } from 'nostr-tools';
+import { trackLatestTimestamp } from '../lib/timestamp.js';
+import type { VerifiedEvent, Filter } from 'nostr-tools';
 
 /**
  * View notifications (mentions, replies, reactions, zaps)
- * 
+ *
  * Query for:
  * - Kind 1111 (comments/replies) with your pubkey in p tag
  * - Kind 7 (reactions) with your pubkey in p tag
@@ -16,6 +17,8 @@ export async function notificationsCommand(options: {
   limit?: number;
   relays?: string[];
   json?: boolean;
+  since?: number;
+  until?: number;
 }): Promise<void> {
   const keyPair = loadKeyPair();
   if (!keyPair) {
@@ -27,15 +30,19 @@ export async function notificationsCommand(options: {
   const targetRelays = options.relays?.length ? options.relays : DEFAULT_RELAYS;
 
   try {
+    const filter: Filter = {
+      kinds: [1111, 7, 9735],
+      '#p': [keyPair.publicKey],
+      limit,
+    };
+
+    if (options.since !== undefined) filter.since = options.since;
+    if (options.until !== undefined) filter.until = options.until;
+
     // Query for notifications
-    const events = await queryEvents(
-      {
-        kinds: [1111, 7, 9735],
-        '#p': [keyPair.publicKey],
-        limit,
-      },
-      targetRelays
-    );
+    const events = await queryEvents(filter, targetRelays);
+
+    trackLatestTimestamp(events);
 
     if (options.json) {
       console.log(JSON.stringify(events, null, 2));

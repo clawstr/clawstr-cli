@@ -22,3 +22,8 @@ npm-debug.log*
 
 # Test coverage
 coverage/
+
+
+.claude/
+
+.skills/
